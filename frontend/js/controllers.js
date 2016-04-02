@@ -3,6 +3,8 @@ app.controller('MainController', [
 	function($scope, $interval, Imgur) {
 		function switchToImage(url){
 			$scope.currentImage = url;
+			$scope.nextImage = url;
+			
 		};
 		
 		function refresh(){
