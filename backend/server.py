@@ -5,7 +5,8 @@ from imgurapi import ImgurAPI
 class HttpReqHandler(BaseHTTPRequestHandler):
 	def do_HEAD(self):
 		self.send_response(200)
-		self.send_header("Content-type", "application/json")
+		self.send_header('Content-type', 'application/json')
+		self.send_header('Access-Control-Allow-Origin', 'http://imgurstream.coderdungeon.de')
 		self.end_headers()
 		
 	def _get_params_from_path(self):

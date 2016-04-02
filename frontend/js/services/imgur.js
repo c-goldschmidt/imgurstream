@@ -1,6 +1,6 @@
 app.factory('Imgur', ['$resource', '$location', function($resource, $location) {
-	var url = $location.host() + ':9001/:gallery/:sort/:showViral';
-			
+	var url = 'http://' + $location.host() + ':9001/:gallery/:sort/:showViral';
+	console.debug(url);		
 	return $resource(
 		url,
 		{

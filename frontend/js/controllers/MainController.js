@@ -13,6 +13,6 @@ app.controller('MainController', [
 		
 		$interval(function(){
 			refresh();
-		}, 5000);
+		}, 20000);
 	}
 ]);
