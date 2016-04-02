@@ -1,14 +1,16 @@
 import time
 from BaseHTTPServer import HTTPServer
 from server import HttpReqHandler
-
-HOST_NAME = ''
-PORT_NUMBER = 9001 # it's over nine thousaaaaand
+from config import Configuration
 
 if __name__ == "__main__":
-	httpd = HTTPServer((HOST_NAME, PORT_NUMBER), HttpReqHandler)
+	config = Configuration('settings.ini')
+	host_name = config.get('settings', 'domain', '')
+	port_number = config.getint('settings', 'port', 9001)
+
+	httpd = HTTPServer((host_name, port_number), HttpReqHandler)
 	
-	print time.asctime(), "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
+	print time.asctime(), "Server Starts - %s:%s" % (host_name, port_number)
 	
 	try:
 		httpd.serve_forever()
@@ -17,4 +19,4 @@ if __name__ == "__main__":
 		
 	httpd.server_close()
 		
-	print time.asctime(), "Server Stops - %s:%s" % (HOST_NAME, PORT_NUMBER)
+	print time.asctime(), "Server Stops - %s:%s" % (host_name, port_number)
