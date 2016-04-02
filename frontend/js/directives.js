@@ -7,28 +7,12 @@ app.directive('backImg', function(){
 					'background-image': 'url(' + scope.backImg +')'
 				});
 			}
+			if(scope.opacity){
+				element.css({'opacity': scope.opacity});
+                        }
 		};
 		
 		scope.$watch('backImg', updateCss);
-	}
-	
-    return {
-		restrict: 'A',
-		link: _link,
-		scope:{
-			backImg: '='
-		}
-	};
-});
-
-app.directive('opacity', function(){
-	function _link(scope, element){			
-		updateCss = function(){			
-			if(scope.opacity){
-				element.css({'opacity': opacity});
-			}
-		};
-		
 		scope.$watch('opacity', updateCss);
 	}
 	
@@ -36,7 +20,8 @@ app.directive('opacity', function(){
 		restrict: 'A',
 		link: _link,
 		scope:{
-			opacity: '='
+			backImg: '=',
+			opacity: '=?'
 		}
 	};
 });
