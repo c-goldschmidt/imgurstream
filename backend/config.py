@@ -10,6 +10,10 @@ class Configuration(ConfigParser):
 		if config_file is not None:
 			self.read(config_file)
 		
+	def save(self):
+		with open(self.config_file, 'w') as cfg:
+			ConfigParser.write(self, cfg)
+		
 	def _with_default(fnc):
 		def _exec_with_default(self, section, key, default_value=None):
 			try:

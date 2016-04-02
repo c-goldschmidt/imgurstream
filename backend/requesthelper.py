@@ -2,7 +2,6 @@
 dumb, but easy ;)
 """
 import requests
-import time
 from _exceptions import RateLimitException
 
 class RequestHelper(object):
@@ -14,6 +13,9 @@ class RequestHelper(object):
 	def update_from_headers(self):
 		raise NotImplementedError
 		
+	def has_remaining_rates(self):
+		raise NotImplementedError
+		
 	def _update_request(fnc):
 		def _call_updated(self, url, headers=None, **kwargs):
 			send_headers = self.get_default_headers()
@@ -21,7 +23,7 @@ class RequestHelper(object):
 			if headers is not None:
 				send_headers.update(headers)
 				
-			if self.rates['remain'] > 20 or time.time() > self.rates['timestamp']:
+			if self.has_remaining_rates():
 				ret = fnc(self, self.API_URL + url, headers=send_headers)
 				self.update_from_headers(ret.headers)
 			else:
