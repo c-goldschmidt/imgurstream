@@ -24,7 +24,8 @@ class ImgurAPI(RequestHelper):
 		self.init_cache()
 	
 	def has_remaining_rates(self):
-		date = datetime.datetime.fromtimestamp(self.rates['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+		timestamp = int(self.rates['timestamp'])
+		date = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
 		
 		self.print_debug(str(self.rates['remain_app']) + ' / ' + str(self.rates['avail_app']) + ' app calls remaining')
 		self.print_debug(str(self.rates['remain_user']) + ' / ' + str(self.rates['avail_user']) + ' user calls remaining')
@@ -106,6 +107,24 @@ class ImgurAPI(RequestHelper):
 	def print_debug(self, text):
 		if self.verbose:
 			print text
+			
+	def get_first_image_of_album(self, id, params):
+		last_id = self.cache.get('last_of_album_id', *params)
+		last_of_album = self.cache.get('last_of_album', *params)
+		
+		if last_id == id:
+			print_debug('using previously cached image for ' + str(id))
+			return last_of_album
+		
+		ret = self.get('image/{}'.format(id))
+		
+		json_parsed = json.loads(ret.text)['data']
+		self.print_debug(json_parsed)
+		
+		self.cache.set(id, 'last_of_album_id', *params)
+		self.cache.set(json_parsed['link'], 'last_of_album', *params)
+		
+		return json_parsed['link']		
 		
 	def query_newest_image(self, gallery='user', sort='time', showViral=False):
 		viral = 'true' if showViral else 'false'	
@@ -135,8 +154,16 @@ class ImgurAPI(RequestHelper):
 		try:
 			ret = self.get('gallery/{}/{}?showViral={}'.format(gallery, sort, viral), headers=headers)
 			self.cache.set(ret.headers['ETag'], 'etag', *params)
-			imgurl = json.loads(ret.text)['data'][0]['link']
-		except:
+			
+			json_parsed = json.loads(ret.text)['data'][0]
+			self.print_debug(json_parsed)
+			
+			if json_parsed['is_album']:
+				imgurl = self.get_first_image_of_album(json_parsed['cover'], params)
+			else:
+				imgurl = json_parsed['link']
+						
+		except ValueError:
 			imgurl = cached_url
 				
 		if imgurl != cached_url:

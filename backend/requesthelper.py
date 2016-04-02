@@ -16,8 +16,12 @@ class RequestHelper(object):
 	def has_remaining_rates(self):
 		raise NotImplementedError
 		
+	def print_debug(self, text):
+		pass
+		
 	def _update_request(fnc):
 		def _call_updated(self, url, headers=None, **kwargs):
+			self.print_debug('call: ' + url)
 			send_headers = self.get_default_headers()
 			
 			if headers is not None:
