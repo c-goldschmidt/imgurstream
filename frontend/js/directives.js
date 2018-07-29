@@ -9,7 +9,7 @@ app.directive('backImg', function(){
 			}
 			if(scope.opacity){
 				element.css({'opacity': scope.opacity});
-                        }
+            }
 		};
 		
 		scope.$watch('backImg', updateCss);

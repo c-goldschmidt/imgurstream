@@ -23,7 +23,10 @@ app.controller('MainController', [
 		}
 		
 		function refresh(){
-			Imgur.get().$promise.then(function(data){
+			Imgur.get({
+			    gallery: 'aww',
+                sort: 'time',
+			}).$promise.then(function(data){
 				switchToImage(data.url)	
 			});
 		}
