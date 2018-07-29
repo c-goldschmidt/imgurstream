@@ -1,0 +1,8 @@
+<div #holder class="holder" fxLayout="row break" *ngIf="images">
+    <div *ngFor="let image of images">
+        <a [href]="image.link" target="_blank" *ngIf="isValid(image)">
+            <app-image *ngIf="!image.is_album" [size]="imageSize" [image]="image"></app-image>
+            <app-image *ngIf="image.is_album" [size]="imageSize" [image]="image.images[0]"></app-image>
+        </a>
+    </div>
+</div>

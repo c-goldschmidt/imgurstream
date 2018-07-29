@@ -1,0 +1,12 @@
+<div class="wrap" fxLayout="row" fxLayoutAlign="center center">
+    <div class="inner" [style.width.px]="size" [style.height.px]="size" fxLayout="row" fxLayoutAlign="center center">
+        <img *ngIf="isImage" [src]="image.link"/>
+        <video autoplay *ngIf="isVideo" >
+            <source [src]="image.link" [type]="image.type">
+        </video>
+        <div *ngIf="!isImage && !isVideo">
+            {{ image.type }}
+            {{ image.link }}
+        </div>
+    </div>
+</div>

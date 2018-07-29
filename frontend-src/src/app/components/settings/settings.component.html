@@ -1,0 +1,19 @@
+<div fxFlex="row">
+    <select fxFlex="nogrow" (change)="update()" [(ngModel)]="gallerySetting">
+        <option value="hot">hot</option>
+        <option value="top">top</option>
+        <option value="user">user submitted</option>
+        <option value="custom">custom</option>
+    </select>
+    <input fxFlex="nogrow" (change)="update()" type="text" [(ngModel)]="settings.settings.gallery.gallery" *ngIf="gallerySetting === 'custom'" />
+    <select fxFlex="nogrow" (change)="update()" [(ngModel)]="settings.settings.gallery.sort">
+        <option value="viral">viral</option>
+        <option value="top">top</option>
+        <option value="time">time</option>
+    </select>
+    <div fxFlex="nogrow">
+        <input type="checkbox" id="chkViral" (change)="update()" [(ngModel)]="settings.settings.gallery.showViral">
+        <label for="chkViral">Most viral</label>
+    </div>
+    <input fxFlex="nogrow" type="number" (change)="update()" [(ngModel)]="refresh" step="1" min="5" max="30"/>
+</div>
