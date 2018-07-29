@@ -1,6 +1,8 @@
 import json
 import time
 import datetime
+import zlib
+import base64
 
 from src.constants import BASE_GALLERIES
 from ._exceptions import NoCredentialsException
@@ -116,7 +118,10 @@ class ImgurAPI(RequestHelper):
 
     def print_debug(self, text):
         if self.verbose:
-            print(text)
+            try:
+                print(text)
+            except:
+                print('cant print')
 
     def get_first_image_of_album(self, id, params):
         last_id = self.cache.get('last_of_album_id', *params)
@@ -134,19 +139,18 @@ class ImgurAPI(RequestHelper):
         self.cache.set(id, 'last_of_album_id', *params)
         self.cache.set(json_parsed['link'], 'last_of_album', *params)
 
-        return json_parsed['link']
+        return json_parsed
 
     def _get_url(self, gallery, sort, viral):
         if gallery in BASE_GALLERIES:
             return 'gallery/{}/{}?showViral={}'.format(gallery, sort, viral)
         return 'gallery/r/{}/{}'.format(gallery, sort)
 
-    def query_newest_image(self, gallery='user', sort='time', show_viral=False):
+    def _query_full_response(self, gallery='user', sort='time', show_viral=False):
         viral = 'true' if show_viral else 'false'
         headers = None
         params = ['latest', gallery, sort, viral]
         etag = self.cache.get('etag', *params)
-        cached_url = self.cache.get('url', *params)
         last_check = self.cache.get('timestamp', *params)
 
         self.print_debug(gallery + '/' + sort + '/' + viral)
@@ -156,9 +160,9 @@ class ImgurAPI(RequestHelper):
 
             self.print_debug('last check was ' + str(time_since_last) + ' sec ago')
 
-            if time_since_last < 60:
+            if time_since_last < 30:
                 self.print_debug('won\'t check again')
-                return cached_url
+                return params, None
 
         if etag:
             headers = {
@@ -167,21 +171,59 @@ class ImgurAPI(RequestHelper):
 
         try:
             ret = self.get(self._get_url(gallery, sort, viral), headers=headers)
-            self.cache.set(ret.headers['ETag'], 'etag', *params)
 
-            json_parsed = json.loads(ret.text)['data'][0]
-            self.print_debug(json_parsed)
+            if 'ETag' in ret.headers:
+                self.cache.set(ret.headers['ETag'], 'etag', *params)
 
-            if json_parsed['is_album']:
-                imgurl = self.get_first_image_of_album(json_parsed['cover'], params)
-            else:
-                imgurl = json_parsed['link']
-
+            json_parsed = json.loads(ret.text)['data']
         except ValueError:
-            imgurl = cached_url
+            json_parsed = None
 
-        if imgurl != cached_url:
-            self.cache.set(imgurl, 'url', *params)
-            self.cache.set(int(time.time()), 'timestamp', *params)
+        return params, json_parsed
 
-        return imgurl
+    def query_raw(self, gallery='user', sort='time', show_viral=False):
+        params, result = self._query_full_response(gallery, sort, show_viral)
+        cached_response = self._get_cache('raw', *params)
+
+        if cached_response and not result:
+            result = cached_response
+
+        if result and isinstance(result, dict) and 'error' in result:
+            return result, False
+            
+        try:
+            if result and ((cached_response and result[0]['link'] != cached_response[0]['link']) or not cached_response):
+                self._set_cache(result, 'raw', *params)
+        except:
+            pass
+
+        return result or [], len(result) > 0
+
+    def _set_cache(self, data, key, *params):
+        data_zip = zlib.compress(json.dumps(data).encode('utf-8'))
+        data_zip = base64.b64encode(data_zip).decode('utf-8')
+
+        self.cache.set(data_zip, 'raw', *params)
+        self.cache.set(int(time.time()), 'timestamp', *params)
+
+    def _get_cache(self, key, *params):
+        cached_response = self.cache.get('raw', *params)
+
+        if cached_response:
+            cached_response = base64.b64decode(cached_response)
+            cached_response = zlib.decompress(cached_response)
+            cached_response = json.loads(cached_response.decode('utf-8'))
+            return cached_response
+        return None
+
+    def query_newest_image(self, gallery='user', sort='time', show_viral=False):
+        raw_response, success = self.query_raw(gallery, sort, 'true' if show_viral else 'false')
+
+        if success:
+            if raw_response[0]['is_album']:
+                params = ['latest', gallery, sort, show_viral]
+                return self.get_first_image_of_album(raw_response[0]['cover'], params)
+            else:
+                return raw_response[0]['link']
+        else:
+            return {}

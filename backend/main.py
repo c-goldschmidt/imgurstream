@@ -21,11 +21,12 @@ if __name__ == "__main__":
             httpd.socket = ssl.wrap_socket(
                 httpd.socket,
                 server_side=True,
-                certfile="/etc/apache2/keys/server.crt",
-                keyfile="/etc/apache2/keys/server.key"
+                certfile=certfile,
+                keyfile=keyfile
             )
         httpd.serve_forever()
     except KeyboardInterrupt:
+        print('aborted by user')
         pass
 
     httpd.server_close()
