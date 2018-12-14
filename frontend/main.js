@@ -135,6 +135,9 @@ var AppModule = /** @class */ (function () {
                 _angular_common_http__WEBPACK_IMPORTED_MODULE_5__["HttpClientModule"],
                 _angular_forms__WEBPACK_IMPORTED_MODULE_3__["FormsModule"],
             ],
+            entryComponents: [
+                _components_images_image_component__WEBPACK_IMPORTED_MODULE_9__["ImageComponent"],
+            ],
             providers: [_services_imgur_service__WEBPACK_IMPORTED_MODULE_0__["ImgurService"], _services_settings_service__WEBPACK_IMPORTED_MODULE_7__["SettingsService"]],
             bootstrap: [_app_component__WEBPACK_IMPORTED_MODULE_4__["AppComponent"]],
         })
@@ -235,7 +238,7 @@ var ImageComponent = /** @class */ (function () {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "<div #holder class=\"holder\" fxLayout=\"row break\" *ngIf=\"images\">\n    <div *ngFor=\"let image of images\">\n        <a [href]=\"image.link\" target=\"_blank\" *ngIf=\"isValid(image)\">\n            <app-image *ngIf=\"!image.is_album\" [size]=\"imageSize\" [image]=\"image\"></app-image>\n            <app-image *ngIf=\"image.is_album\" [size]=\"imageSize\" [image]=\"image.images[0]\"></app-image>\n        </a>\n    </div>\n</div>"
+module.exports = "<div #holder class=\"holder\" fxLayout=\"row break\" *ngIf=\"images\">\n    <!-- <div *ngFor=\"let image of images\">\n        <a [href]=\"image.link\" target=\"_blank\" *ngIf=\"isValid(image)\">\n            <app-image *ngIf=\"!image.is_album\" [size]=\"imageSize\" [image]=\"image\"></app-image>\n            <app-image *ngIf=\"image.is_album\" [size]=\"imageSize\" [image]=\"image.images[0]\"></app-image>\n        </a>\n    </div> -->\n\n    <div #componentHost></div>\n</div>"
 
 /***/ }),
 
@@ -260,11 +263,12 @@ module.exports = ":host {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ImagesComponent", function() { return ImagesComponent; });
-/* harmony import */ var _services_settings_service__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./../../services/settings.service */ "./src/app/services/settings.service.ts");
-/* harmony import */ var _services_imgur_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./../../services/imgur.service */ "./src/app/services/imgur.service.ts");
-/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/_esm5/index.js");
-/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/_esm5/operators/index.js");
+/* harmony import */ var _image_component__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./image.component */ "./src/app/components/images/image.component.ts");
+/* harmony import */ var _services_settings_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./../../services/settings.service */ "./src/app/services/settings.service.ts");
+/* harmony import */ var _services_imgur_service__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./../../services/imgur.service */ "./src/app/services/imgur.service.ts");
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
+/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/_esm5/index.js");
+/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/_esm5/operators/index.js");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -279,22 +283,57 @@ var __metadata = (undefined && undefined.__metadata) || function (k, v) {
 
 
 
+
 var ImagesComponent = /** @class */ (function () {
-    function ImagesComponent(imgur, settings) {
+    function ImagesComponent(imgur, settings, cfResolver) {
         this.imgur = imgur;
         this.settings = settings;
+        this.cfResolver = cfResolver;
+        this.componentMap = new Map();
+        this.refs = [];
     }
     ImagesComponent.prototype.ngOnInit = function () {
         var _this = this;
-        this.unsubscribe$ = new rxjs__WEBPACK_IMPORTED_MODULE_3__["Subject"]();
+        this.refs = [];
+        this.unsubscribe$ = new rxjs__WEBPACK_IMPORTED_MODULE_4__["Subject"]();
         this.imgur.update(this.settings.settings.gallery);
-        Object(rxjs__WEBPACK_IMPORTED_MODULE_3__["interval"])(this.settings.settings.delay).pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_4__["takeUntil"])(this.unsubscribe$)).subscribe(function () {
+        Object(rxjs__WEBPACK_IMPORTED_MODULE_4__["interval"])(this.settings.settings.delay).pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_5__["takeUntil"])(this.unsubscribe$)).subscribe(function () {
             _this.imgur.update(_this.settings.settings.gallery);
         });
-        this.imgur.images$.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_4__["takeUntil"])(this.unsubscribe$)).subscribe(function (images) {
+        this.imgur.images$.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_5__["takeUntil"])(this.unsubscribe$)).subscribe(function (images) {
             _this.images = images;
             _this.onResize();
+            _this.updateComponents();
         });
+    };
+    ImagesComponent.prototype.updateComponents = function () {
+        var _this = this;
+        var numCreated = 0;
+        for (var _i = 0, _a = this.images; _i < _a.length; _i++) {
+            var image = _a[_i];
+            if (!image || this.componentMap.has(image.link)) {
+                continue;
+            }
+            this.createComponent(image);
+            numCreated++;
+        }
+        this.refs = this.refs.filter(function (ref, index) {
+            ref.instance.size = _this.imageSize;
+            var remove = index >= _this.images.length;
+            if (remove) {
+                _this.componentMap.delete(ref.instance.image.link);
+                _this.componentHost.remove(_this.componentHost.indexOf(ref));
+            }
+            return !remove;
+        });
+    };
+    ImagesComponent.prototype.createComponent = function (image) {
+        var factory = this.cfResolver.resolveComponentFactory(_image_component__WEBPACK_IMPORTED_MODULE_0__["ImageComponent"]);
+        var ref = this.componentHost.createComponent(factory, 0);
+        ref.instance.image = image.is_album ? image.images[0] : image;
+        ref.instance.size = this.imageSize;
+        this.refs.unshift(ref);
+        this.componentMap.set(image.link, ref.instance);
     };
     ImagesComponent.prototype.update = function () {
         var _this = this;
@@ -329,7 +368,6 @@ var ImagesComponent = /** @class */ (function () {
             maxSquares = h * w;
             size = Math.min(maxH / h, maxW / w);
         }
-        console.log(numImages);
         return size;
     };
     ImagesComponent.prototype.isValid = function (image) {
@@ -346,22 +384,28 @@ var ImagesComponent = /** @class */ (function () {
         this.unsubscribe$.complete();
     };
     __decorate([
-        Object(_angular_core__WEBPACK_IMPORTED_MODULE_2__["ViewChild"])('holder'),
-        __metadata("design:type", _angular_core__WEBPACK_IMPORTED_MODULE_2__["ElementRef"])
+        Object(_angular_core__WEBPACK_IMPORTED_MODULE_3__["ViewChild"])('holder'),
+        __metadata("design:type", _angular_core__WEBPACK_IMPORTED_MODULE_3__["ElementRef"])
     ], ImagesComponent.prototype, "holder", void 0);
     __decorate([
-        Object(_angular_core__WEBPACK_IMPORTED_MODULE_2__["HostListener"])('window:resize', []),
+        Object(_angular_core__WEBPACK_IMPORTED_MODULE_3__["ViewChild"])('componentHost', { read: _angular_core__WEBPACK_IMPORTED_MODULE_3__["ViewContainerRef"] }),
+        __metadata("design:type", _angular_core__WEBPACK_IMPORTED_MODULE_3__["ViewContainerRef"])
+    ], ImagesComponent.prototype, "componentHost", void 0);
+    __decorate([
+        Object(_angular_core__WEBPACK_IMPORTED_MODULE_3__["HostListener"])('window:resize', []),
         __metadata("design:type", Function),
         __metadata("design:paramtypes", []),
         __metadata("design:returntype", void 0)
     ], ImagesComponent.prototype, "onResize", null);
     ImagesComponent = __decorate([
-        Object(_angular_core__WEBPACK_IMPORTED_MODULE_2__["Component"])({
+        Object(_angular_core__WEBPACK_IMPORTED_MODULE_3__["Component"])({
             selector: 'app-images',
             template: __webpack_require__(/*! ./images.component.html */ "./src/app/components/images/images.component.html"),
             styles: [__webpack_require__(/*! ./images.component.scss */ "./src/app/components/images/images.component.scss")],
         }),
-        __metadata("design:paramtypes", [_services_imgur_service__WEBPACK_IMPORTED_MODULE_1__["ImgurService"], _services_settings_service__WEBPACK_IMPORTED_MODULE_0__["SettingsService"]])
+        __metadata("design:paramtypes", [_services_imgur_service__WEBPACK_IMPORTED_MODULE_2__["ImgurService"],
+            _services_settings_service__WEBPACK_IMPORTED_MODULE_1__["SettingsService"],
+            _angular_core__WEBPACK_IMPORTED_MODULE_3__["ComponentFactoryResolver"]])
     ], ImagesComponent);
     return ImagesComponent;
 }());
