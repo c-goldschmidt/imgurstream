@@ -1,7 +1,19 @@
+import { ImageComponent } from './image.component';
 import { SettingsService } from './../../services/settings.service';
 import { GalleryImage } from './../../interfaces/gallery.interfaces';
 import { ImgurService } from './../../services/imgur.service';
-import { Component, OnInit, OnDestroy, HostListener, ViewChild, ElementRef } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    OnDestroy,
+    HostListener,
+    ViewChild,
+    ElementRef,
+    ViewContainerRef,
+    ComponentFactoryResolver,
+    ComponentRef,
+    ViewRef,
+ } from '@angular/core';
 import { Subject, interval } from 'rxjs';
 import { takeUntil, min, combineLatest } from 'rxjs/operators';
 
@@ -11,16 +23,25 @@ import { takeUntil, min, combineLatest } from 'rxjs/operators';
     styleUrls: ['./images.component.scss'],
 })
 export class ImagesComponent implements OnInit, OnDestroy {
-    images: GalleryImage[];
-    imageSize: number;
-    unsubscribe$: Subject<void>;
-    timer: any;
+    private images: GalleryImage[];
+    private imageSize: number;
+    private unsubscribe$: Subject<void>;
+    private timer: any;
+
+    private componentMap = new Map<string, any>();
+    private refs: ComponentRef<ImageComponent>[] = [];
 
     @ViewChild('holder') holder: ElementRef;
+    @ViewChild('componentHost', {read: ViewContainerRef}) componentHost: ViewContainerRef;
 
-    constructor(private imgur: ImgurService, private settings: SettingsService) {}
+    constructor(
+        private imgur: ImgurService,
+        private settings: SettingsService,
+        private cfResolver: ComponentFactoryResolver,
+    ) {}
 
     ngOnInit() {
+        this.refs = [];
         this.unsubscribe$ = new Subject<void>();
 
         this.imgur.update(this.settings.settings.gallery);
@@ -31,7 +52,39 @@ export class ImagesComponent implements OnInit, OnDestroy {
         this.imgur.images$.pipe(takeUntil(this.unsubscribe$)).subscribe(images => {
             this.images = images;
             this.onResize();
+            this.updateComponents();
         });
+    }
+
+    private updateComponents() {
+        let numCreated = 0;
+        for (const image of this.images) {
+            if (!image || this.componentMap.has(image.link)) { continue; }
+            this.createComponent(image);
+            numCreated++;
+        }
+
+        this.refs = this.refs.filter((ref, index) => {
+            ref.instance.size = this.imageSize;
+
+            const remove = index >= this.images.length;
+            if (remove) {
+                this.componentMap.delete(ref.instance.image.link);
+                this.componentHost.remove(this.componentHost.indexOf(<any>ref));
+            }
+            return !remove;
+        });
+    }
+
+    private createComponent(image: GalleryImage) {
+        const factory = this.cfResolver.resolveComponentFactory(ImageComponent);
+        const ref = this.componentHost.createComponent(factory, 0);
+
+        ref.instance.image = image.is_album ? image.images[0] : image;
+        ref.instance.size = this.imageSize;
+
+        this.refs.unshift(ref);
+        this.componentMap.set(image.link, ref.instance);
     }
 
     update() {
@@ -72,7 +125,6 @@ export class ImagesComponent implements OnInit, OnDestroy {
             size = Math.min(maxH / h, maxW / w);
         }
 
-        console.log(numImages);
         return size;
     }
 

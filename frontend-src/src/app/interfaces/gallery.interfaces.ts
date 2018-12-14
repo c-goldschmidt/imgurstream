@@ -1,4 +1,3 @@
-
 export type GalleryType = 'hot' | 'top' | 'user' | string;
 export enum Sorting {
     VIRAL = 'viral',
