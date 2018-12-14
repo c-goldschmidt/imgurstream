@@ -1,4 +1,4 @@
-<div class="wrap" fxLayout="row" fxLayoutAlign="center center">
+<div class="wrap" fxLayout="row" fxLayoutAlign="center center" *ngIf="image">
     <div class="inner" [style.width.px]="size" [style.height.px]="size" fxLayout="row" fxLayoutAlign="center center">
         <img *ngIf="isImage" [src]="image.link"/>
         <video autoplay *ngIf="isVideo" >
@@ -7,6 +7,11 @@
         <div *ngIf="!isImage && !isVideo">
             {{ image.type }}
             {{ image.link }}
+        </div>
+        <div class="overlay">
+            <div class="bubble" [style.backgroundColor]="available ? image.nsfw ? 'red': 'green' : 'yellow'"></div>
+            <div class="rating">+{{ image.ups || 0 }} -{{image.downs || 0}}</div>
+            <div class="num-pics">{{ raw.is_album ? raw.images.length : '-'}}</div>
         </div>
     </div>
 </div>

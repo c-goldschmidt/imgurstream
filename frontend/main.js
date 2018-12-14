@@ -156,7 +156,7 @@ var AppModule = /** @class */ (function () {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "<div class=\"wrap\" fxLayout=\"row\" fxLayoutAlign=\"center center\">\n    <div class=\"inner\" [style.width.px]=\"size\" [style.height.px]=\"size\" fxLayout=\"row\" fxLayoutAlign=\"center center\">\n        <img *ngIf=\"isImage\" [src]=\"image.link\"/>\n        <video autoplay *ngIf=\"isVideo\" >\n            <source [src]=\"image.link\" [type]=\"image.type\">\n        </video>\n        <div *ngIf=\"!isImage && !isVideo\">\n            {{ image.type }}\n            {{ image.link }}\n        </div>\n    </div>\n</div>\n"
+module.exports = "<div class=\"wrap\" fxLayout=\"row\" fxLayoutAlign=\"center center\" *ngIf=\"image\">\n    <div class=\"inner\" [style.width.px]=\"size\" [style.height.px]=\"size\" fxLayout=\"row\" fxLayoutAlign=\"center center\">\n        <img *ngIf=\"isImage\" [src]=\"image.link\"/>\n        <video autoplay *ngIf=\"isVideo\" >\n            <source [src]=\"image.link\" [type]=\"image.type\">\n        </video>\n        <div *ngIf=\"!isImage && !isVideo\">\n            {{ image.type }}\n            {{ image.link }}\n        </div>\n        <div class=\"overlay\">\n            <div class=\"bubble\" [style.backgroundColor]=\"available ? image.nsfw ? 'red': 'green' : 'yellow'\"></div>\n            <div class=\"rating\">+{{ image.ups || 0 }} -{{image.downs || 0}}</div>\n            <div class=\"num-pics\">{{ raw.is_album ? raw.images.length : '-'}}</div>\n        </div>\n    </div>\n</div>\n"
 
 /***/ }),
 
@@ -167,7 +167,7 @@ module.exports = "<div class=\"wrap\" fxLayout=\"row\" fxLayoutAlign=\"center ce
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "img, video {\n  max-width: 100%;\n  max-height: 100%; }\n"
+module.exports = "img, video {\n  max-width: 100%;\n  max-height: 100%; }\n\n.inner {\n  position: relative; }\n\n.overlay {\n  background-color: rgba(255, 255, 255, 0.65);\n  position: absolute;\n  top: 5px;\n  left: 5px;\n  right: 5px; }\n\n.overlay > div {\n    display: inline-block;\n    margin-right: 4px; }\n\n.overlay .num-pics {\n    float: right; }\n\n.bubble {\n  width: 10px;\n  height: 10px;\n  border-radius: 10px; }\n"
 
 /***/ }),
 
@@ -182,6 +182,14 @@ module.exports = "img, video {\n  max-width: 100%;\n  max-height: 100%; }\n"
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ImageComponent", function() { return ImageComponent; });
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
+var __assign = (undefined && undefined.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -194,29 +202,79 @@ var __metadata = (undefined && undefined.__metadata) || function (k, v) {
 
 var ImageComponent = /** @class */ (function () {
     function ImageComponent() {
+        this.available = true;
     }
+    Object.defineProperty(ImageComponent.prototype, "image", {
+        get: function () {
+            return this.merged;
+        },
+        set: function (image) {
+            this._image = image;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ImageComponent.prototype, "imageId", {
+        get: function () {
+            return this._image.id;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ImageComponent.prototype, "raw", {
+        get: function () {
+            return this._image;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ImageComponent.prototype, "casted", {
+        get: function () {
+            return this._image ? this._image.is_album ? this._image.images[0] : this._image : null;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ImageComponent.prototype, "merged", {
+        get: function () {
+            var result = __assign({}, this.casted);
+            for (var key in result) {
+                if (result[key] === null && this._image[key] !== null) {
+                    result[key] = this._image[key];
+                }
+            }
+            return result;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(ImageComponent.prototype, "isImage", {
         get: function () {
-            return this.image.type.indexOf('image/') === 0;
+            return this.casted ? this.casted.type.indexOf('image/') === 0 : false;
         },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(ImageComponent.prototype, "isVideo", {
         get: function () {
-            return this.image.type.indexOf('video/') === 0;
+            return this.casted ? this.casted.type.indexOf('video/') === 0 : false;
         },
         enumerable: true,
         configurable: true
     });
     __decorate([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Input"])(),
-        __metadata("design:type", Object)
-    ], ImageComponent.prototype, "image", void 0);
-    __decorate([
-        Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Input"])(),
         __metadata("design:type", Number)
     ], ImageComponent.prototype, "size", void 0);
+    __decorate([
+        Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Input"])(),
+        __metadata("design:type", Object)
+    ], ImageComponent.prototype, "available", void 0);
+    __decorate([
+        Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Input"])(),
+        __metadata("design:type", Object),
+        __metadata("design:paramtypes", [Object])
+    ], ImageComponent.prototype, "image", null);
     ImageComponent = __decorate([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Component"])({
             selector: 'app-image',
@@ -238,7 +296,7 @@ var ImageComponent = /** @class */ (function () {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "<div #holder class=\"holder\" fxLayout=\"row break\" *ngIf=\"images\">\n    <!-- <div *ngFor=\"let image of images\">\n        <a [href]=\"image.link\" target=\"_blank\" *ngIf=\"isValid(image)\">\n            <app-image *ngIf=\"!image.is_album\" [size]=\"imageSize\" [image]=\"image\"></app-image>\n            <app-image *ngIf=\"image.is_album\" [size]=\"imageSize\" [image]=\"image.images[0]\"></app-image>\n        </a>\n    </div> -->\n\n    <div #componentHost></div>\n</div>"
+module.exports = "<div #holder class=\"holder\" fxLayout=\"row break\" *ngIf=\"images\">\n    <div #componentHost></div>\n</div>\n"
 
 /***/ }),
 
@@ -311,17 +369,26 @@ var ImagesComponent = /** @class */ (function () {
         var numCreated = 0;
         for (var _i = 0, _a = this.images; _i < _a.length; _i++) {
             var image = _a[_i];
-            if (!image || this.componentMap.has(image.link)) {
+            if (!image) {
+                continue;
+            }
+            if (this.componentMap.has(image.id)) {
+                this.componentMap.set(image.id, image);
                 continue;
             }
             this.createComponent(image);
             numCreated++;
         }
+        console.log('new:', numCreated);
         this.refs = this.refs.filter(function (ref, index) {
             ref.instance.size = _this.imageSize;
+            ref.instance.available = _this.componentMap.has(ref.instance.imageId);
+            if (ref.instance.available) {
+                ref.instance.image = _this.componentMap.get(ref.instance.imageId);
+            }
             var remove = index >= _this.images.length;
             if (remove) {
-                _this.componentMap.delete(ref.instance.image.link);
+                _this.componentMap.delete(ref.instance.imageId);
                 _this.componentHost.remove(_this.componentHost.indexOf(ref));
             }
             return !remove;
@@ -330,10 +397,10 @@ var ImagesComponent = /** @class */ (function () {
     ImagesComponent.prototype.createComponent = function (image) {
         var factory = this.cfResolver.resolveComponentFactory(_image_component__WEBPACK_IMPORTED_MODULE_0__["ImageComponent"]);
         var ref = this.componentHost.createComponent(factory, 0);
-        ref.instance.image = image.is_album ? image.images[0] : image;
+        ref.instance.image = image;
         ref.instance.size = this.imageSize;
         this.refs.unshift(ref);
-        this.componentMap.set(image.link, ref.instance);
+        this.componentMap.set(image.id, image);
     };
     ImagesComponent.prototype.update = function () {
         var _this = this;
@@ -553,23 +620,9 @@ var ImgurService = /** @class */ (function () {
                 console.error(data.error.error);
             }
             if (data && data.list && data.list.length > 0) {
-                _this.mergeList(data.list);
+                _this.images$.next(data.list);
             }
         });
-    };
-    ImgurService.prototype.mergeList = function (newList) {
-        var original = this.images$.value;
-        original.map(function (item, index) {
-            if (!newList.find(function (newItem) { return newItem.link === item.link; })) {
-                delete original[index];
-            }
-        });
-        newList.map(function (item) {
-            if (!original.find(function (newItem) { return newItem && newItem.link === item.link; })) {
-                original.unshift(item);
-            }
-        });
-        this.images$.next(original);
     };
     Object.defineProperty(ImgurService.prototype, "host", {
         get: function () {

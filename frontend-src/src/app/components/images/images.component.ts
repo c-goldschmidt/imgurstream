@@ -1,6 +1,6 @@
 import { ImageComponent } from './image.component';
 import { SettingsService } from './../../services/settings.service';
-import { GalleryImage } from './../../interfaces/gallery.interfaces';
+import { GalleryImage, GalleryData } from './../../interfaces/gallery.interfaces';
 import { ImgurService } from './../../services/imgur.service';
 import {
     Component,
@@ -28,7 +28,7 @@ export class ImagesComponent implements OnInit, OnDestroy {
     private unsubscribe$: Subject<void>;
     private timer: any;
 
-    private componentMap = new Map<string, any>();
+    private componentMap = new Map<string, GalleryImage>();
     private refs: ComponentRef<ImageComponent>[] = [];
 
     @ViewChild('holder') holder: ElementRef;
@@ -59,17 +59,27 @@ export class ImagesComponent implements OnInit, OnDestroy {
     private updateComponents() {
         let numCreated = 0;
         for (const image of this.images) {
-            if (!image || this.componentMap.has(image.link)) { continue; }
+            if (!image) { continue; }
+            if (this.componentMap.has(image.id)) {
+                this.componentMap.set(image.id, image);
+                continue;
+            }
             this.createComponent(image);
             numCreated++;
         }
+        console.log('new:', numCreated);
 
         this.refs = this.refs.filter((ref, index) => {
             ref.instance.size = this.imageSize;
+            ref.instance.available = this.componentMap.has(ref.instance.imageId);
+
+            if (ref.instance.available) {
+                ref.instance.image = this.componentMap.get(ref.instance.imageId);
+            }
 
             const remove = index >= this.images.length;
             if (remove) {
-                this.componentMap.delete(ref.instance.image.link);
+                this.componentMap.delete(ref.instance.imageId);
                 this.componentHost.remove(this.componentHost.indexOf(<any>ref));
             }
             return !remove;
@@ -80,11 +90,11 @@ export class ImagesComponent implements OnInit, OnDestroy {
         const factory = this.cfResolver.resolveComponentFactory(ImageComponent);
         const ref = this.componentHost.createComponent(factory, 0);
 
-        ref.instance.image = image.is_album ? image.images[0] : image;
+        ref.instance.image = image;
         ref.instance.size = this.imageSize;
 
         this.refs.unshift(ref);
-        this.componentMap.set(image.link, ref.instance);
+        this.componentMap.set(image.id, image);
     }
 
     update() {
@@ -130,7 +140,7 @@ export class ImagesComponent implements OnInit, OnDestroy {
 
     isValid(image: GalleryImage) {
         let valid = !!image;
-        valid = valid && (!image.is_album || (image.is_album && image.images && image.images.length > 0));
+        valid = valid && (!image.is_album || (image.is_album && (<GalleryData>image).images && (<GalleryData>image).images.length > 0));
         return valid;
     }
 

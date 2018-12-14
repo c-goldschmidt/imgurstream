@@ -18,26 +18,9 @@ export class ImgurService {
                 console.error(data.error.error);
             }
             if (data && data.list && data.list.length > 0) {
-                this.mergeList(data.list);
+                this.images$.next(data.list);
             }
         });
-    }
-
-    private mergeList(newList: GalleryImage[]) {
-        const original = this.images$.value;
-
-        original.map((item, index) => {
-            if (!newList.find(newItem => newItem.link === item.link)) {
-                delete original[index];
-            }
-        });
-        newList.map((item) => {
-            if (!original.find(newItem => newItem && newItem.link === item.link)) {
-                original.unshift(item);
-            }
-        });
-
-        this.images$.next(original);
     }
 
     private get host(): string {

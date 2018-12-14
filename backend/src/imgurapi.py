@@ -25,16 +25,12 @@ class ImgurAPI(RequestHelper):
             'timestamp': 0
         }
         self.verbose = False
+        self.show_rates = False
         self.init_config()
         self.init_cache()
 
     def has_remaining_rates(self):
-        timestamp = int(self.rates['timestamp'])
-        date = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-
-        self.print_debug(str(self.rates['remain_app']) + ' / ' + str(self.rates['avail_app']) + ' app calls remaining')
-        self.print_debug(str(self.rates['remain_user']) + ' / ' + str(self.rates['avail_user']) + ' user calls remaining')
-        self.print_debug('next user reset at ' + date)
+        self.print_rates()
 
         if self.rates['remain_user'] > 10 and \
            self.rates['remain_app'] > 10:
@@ -43,6 +39,16 @@ class ImgurAPI(RequestHelper):
             return True
 
         return False
+        
+    def print_rates(self):
+        if not self.show_rates:
+            return
+        
+        timestamp = int(self.rates['timestamp'])
+        date = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+        print(str(self.rates['remain_app']) + ' / ' + str(self.rates['avail_app']) + ' app calls remaining')
+        print(str(self.rates['remain_user']) + ' / ' + str(self.rates['avail_user']) + ' user calls remaining')
+        print('next user reset at ' + date)
 
     def init_config(self):
         self.config = Configuration(self.CONFIG_FILE)
@@ -60,6 +66,7 @@ class ImgurAPI(RequestHelper):
         self.rates['remain_app'] = self.config.getint('rates', 'remain_app', fallback=50)
         self.rates['timestamp'] = self.config.getint('rates', 'timestamp', fallback=0)
         self.verbose = self.config.getboolean('settings', 'verbose', fallback=False)
+        self.show_rates = self.config.getboolean('settings', 'show_rates', fallback=False)
 
     def init_cache(self):
         self.cache = Cache(self.CACHE_FILE)
@@ -143,7 +150,7 @@ class ImgurAPI(RequestHelper):
 
     def _get_url(self, gallery, sort, viral):
         if gallery in BASE_GALLERIES:
-            return 'gallery/{}/{}?showViral={}'.format(gallery, sort, viral)
+            return 'gallery/{}/{}?showViral={}&mature=true'.format(gallery, sort, viral)
         return 'gallery/r/{}/{}'.format(gallery, sort)
 
     def _query_full_response(self, gallery='user', sort='time', show_viral=False):
@@ -160,7 +167,7 @@ class ImgurAPI(RequestHelper):
 
             self.print_debug('last check was ' + str(time_since_last) + ' sec ago')
 
-            if time_since_last < 30:
+            if time_since_last < 10:
                 self.print_debug('won\'t check again')
                 return params, None
 
